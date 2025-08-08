@@ -1,0 +1,42 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: "3.10"
+          activate-environment: chimera
+          environment-file: environment.yml
+
+      - name: Generate Lockfile
+        shell: bash -l {0}
+        run: |
+          conda-lock -f environment.yml -p linux-64 --lockfile conda-lock.yml
+          echo "conda-lock.yml hash: $(sha256sum conda-lock.yml)"
+
+      - name: Install dependencies from lockfile
+        shell: bash -l {0}
+        run: |
+          conda-lock install -n chimera --dev
+          conda info --envs
+
+      - name: Run Linters
+        shell: bash -l {0}
+        run: |
+          ruff check .
+          black --check .
+          isort --check-only .
+
+      - name: Run Tests
+        shell: bash -l {0}
+        run: |
+          pytest

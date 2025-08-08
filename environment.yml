@@ -1,0 +1,26 @@
+name: chimera
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - pytorch::pytorch-cuda=11.8
+  - pip
+  - pip:
+    - transformers
+    - timm
+    - datasets
+    - mlflow
+    - conda-lock
+    - pynvml
+    - ipykernel
+    - jupyter
+    - ruff
+    - black
+    - isort
+    - pytest
+    - uv

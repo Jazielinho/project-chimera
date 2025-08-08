@@ -4,7 +4,11 @@ line-length = 88
 [tool.isort]
 profile = "black"
 
+# --- SECCIÓN CORREGIDA ---
 [tool.ruff]
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "W", "F", "I", "C", "B"]
 ignore = ["E501"]
+# -------------------------

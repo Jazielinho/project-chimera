@@ -2,6 +2,16 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# MLflow
+mlruns/
+
+# IDE files
+.idea/
+.vscode/
 
 # C extensions
 *.so

@@ -1,6 +1,6 @@
 import mlflow
-from chimera.utils.mlflow_utils import log_reproducibility_passport
 
+from chimera.utils.mlflow_utils import log_reproducibility_passport
 
 if __name__ == "__main__":
 

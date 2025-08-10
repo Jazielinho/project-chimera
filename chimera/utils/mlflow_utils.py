@@ -1,11 +1,12 @@
 import hashlib
 import platform
 import subprocess
+
 import mlflow
+import pynvml
+import timm
 import torch
 import transformers
-import timm
-import pynvml
 
 
 def get_git_commit_hash():
@@ -22,7 +23,11 @@ def get_git_commit_hash():
     :rtype: str
     """
     try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .strip()
+            .decode("utf-8")
+        )
     except subprocess.CalledProcessError:
         return "N/A"
 

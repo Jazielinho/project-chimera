@@ -66,7 +66,7 @@ class ContrastiveLoss(nn.Module):
 
         # Clamp logit_scale para estabilidad numérica (más conservador)
         logit_scale = torch.clamp(
-            self.logit_scale.exp(), min=0.1, max=self.max_logit_scale
+            self.logit_scale.exp(), min=0.0, max=self.max_logit_scale
         )
 
         # Calcular matriz de similitud coseno

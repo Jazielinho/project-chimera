@@ -16,7 +16,7 @@
 - drop: 0.8656
 - wall-clock: 0.12 min
 - GPU util (dmon): 0.00%
-- Max VRAM: 0.26 GB
+- Max VRAM: 1.27 GB
 
 ## SLOs
 

@@ -106,23 +106,39 @@ def start_dmon(log_path: str = "dmon.log"):
 
 def stop_dmon(proc, log_path: str | None) -> float:
     gpu_util_avg = 0.0
-    if proc and log_path and Path(log_path).exists():
-        time.sleep(2)
+    if not proc or not log_path or not Path(log_path).exists():
+        return gpu_util_avg
+    time.sleep(1.5)
+    try:
         proc.terminate()
+    except Exception:
+        pass
+
+    try:
+        lines = Path(log_path).read_text().splitlines()
+        if not lines:
+            return gpu_util_avg
+        header = lines[0].split()
+        # Busca columna 'sm' (streaming multiprocessor util)
         try:
-            lines = Path(log_path).read_text().splitlines()[1:]
-            vals = []
-            for ln in lines:
-                parts = ln.strip().split()
-                if len(parts) >= 5:
-                    try:
-                        vals.append(float(parts[4]))  # "sm"
-                    except Exception:
-                        pass
-            if vals:
-                gpu_util_avg = sum(vals) / len(vals)
-        except Exception as e:
-            print(f"[WARN] Error leyendo {log_path}: {e}")
+            sm_idx = header.index("sm")
+        except ValueError:
+            # fallback: última columna numérica
+            sm_idx = len(header) - 1
+
+        vals = []
+        for ln in lines[1:]:
+            parts = ln.split()
+            if len(parts) <= sm_idx:
+                continue
+            try:
+                vals.append(float(parts[sm_idx]))
+            except Exception:
+                pass
+        if vals:
+            gpu_util_avg = sum(vals) / len(vals)
+    except Exception as e:
+        print(f"[WARN] Error leyendo {log_path}: {e}")
     return gpu_util_avg
 
 
@@ -225,6 +241,8 @@ def log_metrics(
 def main(args):
     setup_reproducibility(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.backends.cudnn.benchmark = True  # acelera convs con tamaños fijos
+
     print(f"[INFO] device={device}")
 
     mlflow.set_experiment("Sanity")
@@ -251,6 +269,12 @@ def main(args):
         txt_enc = TextEncoderMiniLM(embed_dim=args.embed_dim).to(device)
         loss_fn = ContrastiveLoss(max_logit_scale=args.max_logit_scale).to(device)
 
+        # ⬇️ Asegura que TODO está realmente en CUDA
+        assert next(img_enc.parameters()).is_cuda, "ImageEncoder no está en CUDA"
+        # TextEncoder puede tener params congelados, pero igualmente verifica:
+        assert next(txt_enc.parameters()).is_cuda, "TextEncoder no está en CUDA"
+        assert next(loss_fn.parameters()).is_cuda, "Loss no está en CUDA"
+
         trainable = (
             list(img_enc.proj.parameters())
             + list(txt_enc.proj.parameters())
@@ -274,6 +298,9 @@ def main(args):
         gpu_proc, log_path = start_dmon("dmon_sanity.log")
 
         print(f"[INFO] Sanity por {args.num_steps} steps…")
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+
         t0 = time.perf_counter()
         losses: List[float] = []
         sims: List[float] = []
@@ -307,6 +334,9 @@ def main(args):
             pos_sims.append(loss_dict["positive_similarity"])
             logits.append(loss_dict["logit_scale"])
             log_metrics(step, actual_loss, loss_dict, grad_norms)
+
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
 
         wall = time.perf_counter() - t0
         wall_min = wall / 60.0

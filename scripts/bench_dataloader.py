@@ -163,6 +163,9 @@ def main(args):
         total_images = 0
         it = iter(dl)
         for _ in trange(args.num_iterations, desc="Benchmark"):
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+
             t0 = time.perf_counter()
 
             batch = next(it, None)

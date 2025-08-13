@@ -13,10 +13,10 @@
 
 ## Resultados
 
-- **Throughput:** 1998.78 imgs/s
-- **Tiempo promedio por batch:** 8.00 ms
-- **Tiempo P50 por batch:** 1.07 ms
-- **Tiempo P95 por batch:** 43.94 ms
+- **Throughput:** 1985.34 imgs/s
+- **Tiempo promedio por batch:** 8.06 ms
+- **Tiempo P50 por batch:** 1.02 ms
+- **Tiempo P95 por batch:** 38.11 ms
 - **GPU Util promedio (dmon):** 0.00%
 
 ## SLOs

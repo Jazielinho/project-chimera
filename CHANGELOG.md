@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.1] - 2025-08-13
+
+### Added
+- **Documentación de Problemas Conocidos:** Actualización detallada de KNOWN_ISSUES.md con análisis completo de los resultados de la prueba de sanidad.
+- **Explicación Mejorada sobre Utilización de GPU:** Documentación ampliada sobre el comportamiento esperado de la GPU en pruebas cortas y plan para su optimización futura.
+
+### Changed
+- **Formato Mejorado en Reportes:** Presentación más clara y profesional de los resultados de las pruebas en la documentación.
+- **Actualización de la Fecha del Hito GO/NO-GO #1:** Reflejando la fecha actual de finalización (2025-08-13).
+
 ## [0.1.0] - 2025-08-11
 
 ### Added

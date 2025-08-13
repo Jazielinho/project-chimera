@@ -384,7 +384,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sanity check (200 steps)")
     parser.add_argument("--data_dir", type=str, default="data/flickr8k")
-    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--grad_accum_steps", type=int, default=8)
     parser.add_argument("--num_workers", type=int, default=24)
     parser.add_argument("--learning_rate", type=float, default=5e-4)

@@ -2,7 +2,7 @@
 
 ## Config
 
-- batch_size: 256
+- batch_size: 16
 - grad_accum_steps: 8
 - num_workers: 24
 - lr: 0.0005
@@ -11,12 +11,12 @@
 
 ## Resultados
 
-- loss[0] (avg 10): 5.5438
-- loss[200] (avg 10): 3.9636
-- drop: 1.5802
-- wall-clock: 1.61 min
-- GPU util (dmon): 45.48%
-- Max VRAM: 2.80 GB
+- loss[0] (avg 10): 2.7692
+- loss[200] (avg 10): 1.9036
+- drop: 0.8656
+- wall-clock: 0.14 min
+- GPU util (dmon): 0.00%
+- Max VRAM: 1.27 GB
 
 ## SLOs
 

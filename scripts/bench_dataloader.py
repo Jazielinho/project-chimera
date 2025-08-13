@@ -79,12 +79,16 @@ def write_benchmark_report(
     with open(report_path, "w") as f:
         f.write("# Dataloader Benchmark Results\n\n")
         f.write("## Configuración\n\n")
-        f.write(f"- **Parquet:** {os.path.join(args.data_dir, 'processed', 'flickr8k_small.parquet')}\n")
+        f.write(
+            f"- **Parquet:** {os.path.join(args.data_dir, 'processed', 'flickr8k_small.parquet')}\n"
+        )
         f.write(f"- **Batch Size:** {args.batch_size}\n")
         f.write(f"- **Num Workers:** {args.num_workers}\n")
         f.write(f"- **Prefetch Factor:** {args.prefetch_factor}\n")
         f.write(f"- **Pin Memory:** {args.pin_memory}\n")
-        f.write(f"- **Device:** {torch.device('cuda' if torch.cuda.is_available() else 'cpu')}\n")
+        f.write(
+            f"- **Device:** {torch.device('cuda' if torch.cuda.is_available() else 'cpu')}\n"
+        )
         f.write(f"- **Warmup Iters:** {args.num_warmup}\n")
         f.write(f"- **Measure Iters:** {args.num_iterations}\n\n")
 
@@ -98,11 +102,17 @@ def write_benchmark_report(
         slo_throughput = 300
         slo_gpu_util = 85.0
         f.write("## SLOs\n\n")
-        f.write(f"- Throughput ≥ {slo_throughput}: {'✅ PASS' if status_thr else '❌ FAIL'}\n")
-        f.write(f"- GPU util ≥ {slo_gpu_util}%: {'✅ PASS' if status_gpu else '❌ FAIL'}\n\n")
+        f.write(
+            f"- Throughput ≥ {slo_throughput}: {'✅ PASS' if status_thr else '❌ FAIL'}\n"
+        )
+        f.write(
+            f"- GPU util ≥ {slo_gpu_util}%: {'✅ PASS' if status_gpu else '❌ FAIL'}\n\n"
+        )
 
         f.write("## Notas y Observaciones\n\n")
-        f.write("- El benchmark **sí** incluye el tiempo de pedir el batch al DataLoader y la transferencia a GPU.\n")
+        f.write(
+            "- El benchmark **sí** incluye el tiempo de pedir el batch al DataLoader y la transferencia a GPU.\n"
+        )
         f.write("- Se realizó warmup para estabilizar mediciones.\n")
 
     print(f"[INFO] Reporte escrito en {report_path}")
@@ -213,4 +223,3 @@ if __name__ == "__main__":
     parser.add_argument("--num_warmup", type=int, default=10)
     args = parser.parse_args()
     main(args)
-

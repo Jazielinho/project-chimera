@@ -36,12 +36,11 @@ day2-bench:
 day2-sanity:
 	@echo "Running sanity check training..."
 	python -m chimera.train.train_sanity --monitor_gpu \
-		--batch_size 256 \
-		--learning_rate 2e-3 \
-		--temperature 0.1 \
+		--batch_size 16 \
+		--learning_rate 5e-4 \
 		--num_workers 8 \
-		--grad_accum_steps 32 \
-		--embed_dim 512
+		--grad_accum_steps 8 \
+		--embed_dim 256
 
 day2-full: day2-setup day2-data day2-bench day2-sanity
 	@echo "Day 2 complete! Check reports/ for results."

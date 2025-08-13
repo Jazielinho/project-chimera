@@ -40,13 +40,11 @@ class ImageEncoderResNet18(nn.Module):
         feat = self.backbone.fc.in_features
         self.backbone.fc = nn.Identity()
         self.proj = nn.Sequential(
-            nn.Linear(feat, embed_dim),
-            nn.ReLU(),
-            nn.Linear(embed_dim, embed_dim)
+            nn.Linear(feat, embed_dim), nn.ReLU(), nn.Linear(embed_dim, embed_dim)
         )
 
     def forward(self, x):
-        z = self.backbone(x)         # [B, feat]
+        z = self.backbone(x)  # [B, feat]
         z = nn.functional.normalize(self.proj(z), dim=-1)
         return z
 
@@ -54,16 +52,16 @@ class ImageEncoderResNet18(nn.Module):
 class TextEncoderMiniLM(nn.Module):
     def __init__(self, embed_dim=256, max_len=32):
         super().__init__()
-        self.tok = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        self.tok = AutoTokenizer.from_pretrained(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
         self.model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
         for p in self.model.parameters():
             p.requires_grad = False
 
         hid = self.model.config.hidden_size
         self.proj = nn.Sequential(
-            nn.Linear(hid, embed_dim),
-            nn.ReLU(),
-            nn.Linear(embed_dim, embed_dim)
+            nn.Linear(hid, embed_dim), nn.ReLU(), nn.Linear(embed_dim, embed_dim)
         )
         self.max_len = max_len
 
@@ -73,7 +71,7 @@ class TextEncoderMiniLM(nn.Module):
             padding=True,
             truncation=True,
             max_length=self.max_len,
-            return_tensors="pt"
+            return_tensors="pt",
         ).to(self.model.device)
         out = self.model(**tok).last_hidden_state
         mask = tok["attention_mask"].unsqueeze(-1)
@@ -159,9 +157,13 @@ def write_sanity_report(
         ok_time = total_time_min <= 25
         ok_gpu = gpu_util_avg >= args.min_gpu_util
         f.write("## SLOs\n\n")
-        f.write(f"- Loss drop ≥ {args.min_loss_drop}: {'✅ PASS' if ok_loss else '❌ FAIL'}\n")
+        f.write(
+            f"- Loss drop ≥ {args.min_loss_drop}: {'✅ PASS' if ok_loss else '❌ FAIL'}\n"
+        )
         f.write(f"- Time ≤ 25 min: {'✅ PASS' if ok_time else '❌ FAIL'}\n")
-        f.write(f"- GPU util ≥ {args.min_gpu_util}%: {'✅ PASS' if ok_gpu else '❌ FAIL'}\n")
+        f.write(
+            f"- GPU util ≥ {args.min_gpu_util}%: {'✅ PASS' if ok_gpu else '❌ FAIL'}\n"
+        )
 
 
 def train_step(
@@ -182,7 +184,9 @@ def train_step(
     img_f = image_encoder(images)
     txt_f = text_encoder(captions)
 
-    loss_dict = loss_fn(img_f, txt_f)  # {"loss", "avg_similarity", "positive_similarity", "logit_scale"}
+    loss_dict = loss_fn(
+        img_f, txt_f
+    )  # {"loss", "avg_similarity", "positive_similarity", "logit_scale"}
     loss = loss_dict["loss"] / args.grad_accum_steps
     loss.backward()
 
@@ -204,7 +208,9 @@ def train_step(
     return actual_loss, loss_dict, grad_norms
 
 
-def log_metrics(step: int, actual_loss: float, loss_dict: dict, grad_norms: List[float]):
+def log_metrics(
+    step: int, actual_loss: float, loss_dict: dict, grad_norms: List[float]
+):
     if step % 10 == 0:
         mlflow.log_metric("loss", actual_loss, step=step)
         mlflow.log_metric("avg_similarity", loss_dict["avg_similarity"], step=step)
@@ -226,18 +232,18 @@ def main(args):
         log_reproducibility_passport()
 
         # Hparams
-        for k, v in dict(
-            batch_size=args.batch_size,
-            grad_accum_steps=args.grad_accum_steps,
-            effective_batch=args.batch_size * args.grad_accum_steps,
-            num_workers=args.num_workers,
-            learning_rate=args.learning_rate,
-            seed=args.seed,
-            num_steps=args.num_steps,
-            grad_clip_norm=args.grad_clip_norm,
-            embed_dim=args.embed_dim,
-            max_logit_scale=args.max_logit_scale,
-        ).items():
+        for k, v in {
+            "batch_size": args.batch_size,
+            "grad_accum_steps": args.grad_accum_steps,
+            "effective_batch": args.batch_size * args.grad_accum_steps,
+            "num_workers": args.num_workers,
+            "learning_rate": args.learning_rate,
+            "seed": args.seed,
+            "num_steps": args.num_steps,
+            "grad_clip_norm": args.grad_clip_norm,
+            "embed_dim": args.embed_dim,
+            "max_logit_scale": args.max_logit_scale,
+        }.items():
             mlflow.log_param(k, v)
 
         # Modelos y pérdida (encoders congelados; solo proyecciones se entrenan)
@@ -250,7 +256,9 @@ def main(args):
             + list(txt_enc.proj.parameters())
             + list(loss_fn.parameters())
         )
-        optimizer = torch.optim.AdamW(trainable, lr=args.learning_rate, weight_decay=1e-2)
+        optimizer = torch.optim.AdamW(
+            trainable, lr=args.learning_rate, weight_decay=1e-2
+        )
         scheduler = CosineAnnealingLR(optimizer, T_max=args.num_steps)
 
         data_path = os.path.join(args.data_dir, "processed", "flickr8k_small.parquet")

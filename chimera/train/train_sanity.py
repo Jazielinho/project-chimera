@@ -269,7 +269,7 @@ def main(args):
         txt_enc = TextEncoderMiniLM(embed_dim=args.embed_dim).to(device)
         loss_fn = ContrastiveLoss(max_logit_scale=args.max_logit_scale).to(device)
 
-        # ⬇️ Asegura que TODO está realmente en CUDA
+        # ⬇️ Asegura que está realmente en CUDA
         assert next(img_enc.parameters()).is_cuda, "ImageEncoder no está en CUDA"
         # TextEncoder puede tener params congelados, pero igualmente verifica:
         assert next(txt_enc.parameters()).is_cuda, "TextEncoder no está en CUDA"

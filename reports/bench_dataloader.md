@@ -2,22 +2,29 @@
 
 ## Configuración
 
+- **Parquet:** data/flickr8k/processed/flickr8k_small.parquet
 - **Batch Size:** 16
-- **Num Workers:** 12
+- **Num Workers:** 8
 - **Prefetch Factor:** 2
 - **Pin Memory:** True
 - **Device:** cuda
+- **Warmup Iters:** 10
+- **Measure Iters:** 200
 
 ## Resultados
 
-- **Throughput:** 17076.05 imgs/s
-- **Tiempo promedio por batch:** 0.94 ms
-- **Tiempo P50 por batch:** 0.88 ms
-- **Tiempo P95 por batch:** 1.30 ms
+- **Throughput:** 1906.14 imgs/s
+- **Tiempo promedio por batch:** 8.39 ms
+- **Tiempo P50 por batch:** 1.00 ms
+- **Tiempo P95 por batch:** 33.84 ms
+- **GPU Util promedio (dmon):** 0.00%
 
-**SLO Status:** ✅ PASS - Throughput 17076.05 imgs/s ≥ 300 imgs/s
+## SLOs
+
+- Throughput ≥ 300: ✅ PASS
+- GPU util ≥ 85.0%: ❌ FAIL
 
 ## Notas y Observaciones
 
-- El benchmark incluye el tiempo de transferencia a GPU para simular el flujo real de datos.
-- Se realizó un warmup previo para estabilizar mediciones.
+- El benchmark **sí** incluye el tiempo de pedir el batch al DataLoader y la transferencia a GPU.
+- Se realizó warmup para estabilizar mediciones.

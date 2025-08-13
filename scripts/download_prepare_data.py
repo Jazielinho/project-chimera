@@ -768,7 +768,7 @@ if __name__ == "__main__":
         "--force",
         action="store_true",
         help="Forzar la regeneración de archivos existentes",
-        # default=True
+        default=True
     )
 
     args = parser.parse_args()

@@ -31,15 +31,11 @@ fi
 echo "\n========== Paso 3: Prueba de vida (train_sanity.py) =========="
     # Usar configuración optimizada para mejor utilización de GPU y convergencia
     python -m chimera.train.train_sanity --monitor_gpu \
-        --batch_size 64 \
-        --learning_rate 2e-3 \
-        --temperature 0.1 \
-        --num_workers 8 \
-        --min_loss_drop 0.03 \
-        --min_gpu_util 30.0 \
-        --grad_accum_steps 4 \
-        --embed_dim 512 \
-        --num_steps 300
+    --batch_size 16 \
+		--learning_rate 5e-4 \
+		--num_workers 8 \
+		--grad_accum_steps 8 \
+		--embed_dim 256
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Falló la prueba de vida."

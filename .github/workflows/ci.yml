@@ -29,6 +29,11 @@ jobs:
           conda-lock install -n chimera --dev
           conda info --envs
 
+      - name: Add repo to PYTHONPATH
+        shell: bash -l {0}
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE${PYTHONPATH+:$PYTHONPATH}" >> $GITHUB_ENV
+
       - name: Run Linters
         shell: bash -l {0}
         run: |

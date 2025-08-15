@@ -1,32 +1,3 @@
-# Image Encoder Benchmark Results
-
-**Date**: 2025-08-15 17:52:45
-
-**Git SHA**: `9d5c6ab358ef3c117db7e7ca09f51a972bf97b36`
-
-## Configuration
-
-- **Device**: cuda
-- **Image size**: 224x224
-- **Batch size**: 64
-- **DataLoader workers**: 8
-
-## Performance Metrics
-
-- **Throughput**: 1547.14 images/sec
-- **Latency (avg)**: 41.37 ms/batch
-- **Latency (median)**: 41.25 ms/batch
-- **Latency (P95)**: 41.86 ms/batch
-- **VRAM peak**: 1472.56 MB
-
-## Model Details
-
-- **Backbone**: ResNet18 pretrained on ImageNet
-- **Normalization**: ImageNet (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-- **Training**: Frozen backbone, only projection head trainable
-
-## Model Architecture
-
 ## Model summary (torchinfo)
 
 ```
@@ -143,5 +114,3 @@ Params size (MB): 45.23
 Estimated Total Size (MB): 85.58
 ===================================================================================================================================================================================================
 ```
-
-[View detailed architecture summary](architecture_image_encoder.md)

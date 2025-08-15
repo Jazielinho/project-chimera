@@ -5,10 +5,14 @@ channels:
   - conda-forge
 dependencies:
   - python=3.10
-  - pytorch::pytorch
-  - pytorch::torchvision
-  - pytorch::torchaudio
+  # PyTorch stack con versiones específicas y compatibles
+  - pytorch::pytorch=2.1.2
+  - pytorch::torchvision=0.16.2
+  - pytorch::torchaudio=2.1.2
   - pytorch::pytorch-cuda=11.8
+  # Fijar NumPy a versión compatible
+  - numpy<2
+  - graphviz
   - pip
   - pip:
     - transformers
@@ -24,3 +28,7 @@ dependencies:
     - isort
     - pytest
     - uv
+    - torchviz
+    - torchview
+    - torchinfo
+

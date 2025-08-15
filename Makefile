@@ -42,3 +42,19 @@ day2-bench: day2-data
 # Target principal para ejecutar todo el Día 2
 day2-full: day2-data day2-sanity
 	@echo "Day 2 complete! Check MLflow UI and reports/ for results."
+
+
+# Day 3: Image Encoder targets
+.PHONY: day3-bench-image-encoder day3-full
+
+day3-bench-image-encoder: day2-data
+	@echo "Benchmarking image encoder..."
+	python scripts/bench_image_encoder.py --batch-size 64 --visualize-arch --log-mlflow
+	@echo "Benchmark report generated at reports/bench_image_encoder.md"
+	@echo "Architecture summary generated at reports/architecture_image_encoder.md"
+	@echo "Results logged to MLflow for reproducibility"
+
+day3-full: day3-bench-image-encoder
+	@echo "Day 3 complete! Image encoder benchmarked and tested."
+
+bench-image-encoder: day3-bench-image-encoder

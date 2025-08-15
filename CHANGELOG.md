@@ -1,5 +1,24 @@
 # Changelog
+# Changelog
 
+## [0.1.1] - 2025-08-14
+
+### Added
+- Implemented ImageEncoder model with ResNet18 backbone and projection head
+- Created benchmark script for measuring ImageEncoder performance
+- Added unit tests for ImageEncoder
+- Added Makefile target for running image encoder benchmarks
+
+### Changed
+- Updated project structure to include models directory
+
+## [0.0.1] - 2025-08-08
+
+### Added
+- Initial project setup
+- CI configuration with ruff, black, isort, and pytest
+- Basic Makefile and pyproject.toml configuration
+- Project structure with placeholder files
 ## [0.1.1] - 2025-08-13
 
 ### Added

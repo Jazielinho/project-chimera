@@ -58,3 +58,22 @@ day3-full: day3-bench-image-encoder
 	@echo "Day 3 complete! Image encoder benchmarked and tested."
 
 bench-image-encoder: day3-bench-image-encoder
+
+# Day 4: Text Encoder targets
+.PHONY: day4-bench-text-encoder day4-full
+
+day4-bench-text-encoder: day2-data
+	@echo "Benchmarking text encoder..."
+	python scripts/bench_text_encoder.py --batch-size 64 --visualize-arch --log-mlflow ; \
+	if [ -f reports/architecture_text_encoder.md ]; then \
+		echo "Architecture summary generated at reports/architecture_text_encoder.md"; \
+	else \
+		echo "Architecture summary FAILED (file not found)"; \
+	fi
+	@echo "Benchmark report generated at reports/bench_text_encoder.md"
+	@echo "Results logged to MLflow for reproducibility"
+
+day4-full: day4-bench-text-encoder
+	@echo "Day 4 complete! Text encoder benchmarked and tested."
+
+bench-text-encoder: day4-bench-text-encoder

@@ -1,32 +1,3 @@
-# Text Encoder Benchmark Results
-
-**Date**: 2025-08-21 19:46:40
-
-**Git SHA**: `7918ff98d6f794bd660b261ba41c7e113034fbe1`
-
-## Configuration
-
-- **Device**: cuda
-- **Max text length**: 32
-- **Batch size**: 64
-- **DataLoader workers**: 8
-
-## Performance Metrics
-
-- **Throughput**: 3535.57 texts/sec
-- **Latency (avg)**: 18.10 ms/batch
-- **Latency (median)**: 18.37 ms/batch
-- **Latency (P95)**: 20.01 ms/batch
-- **VRAM peak**: 128.51 MB
-
-## Model Details
-
-- **Backbone**: Transformer (pretrained embeddings)
-- **Normalization**: Lowercase, tokenization, padding
-- **Training**: Frozen embeddings, only projection head trainable
-
-## Model Architecture
-
 ## Model summary (torchinfo)
 
 ```
@@ -127,5 +98,3 @@ Params size (MB): 91.25
 Estimated Total Size (MB): 98.14
 ============================================================================================================================================================================================================================
 ```
-
-[View detailed architecture summary](architecture_text_encoder.md)

@@ -1,18 +1,16 @@
-
-from typing import Tuple
 import os
 from pathlib import Path
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoModel, AutoTokenizer
+
 
 class TextEncoder(nn.Module):
     def __init__(
-            self,
-            embed_dim: int = 256,
-            freeze_backbone: bool = True,
-            max_length: int = 32
+        self, embed_dim: int = 256, freeze_backbone: bool = True, max_length: int = 32
     ):
         """
         TextEncoder is a PyTorch module for encoding text sequences into fixed-size, L2-normalized embeddings.
@@ -50,8 +48,7 @@ class TextEncoder(nn.Module):
         self.num_features = self.model.config.hidden_size
 
         self.proj = nn.Sequential(
-            nn.Linear(self.num_features, embed_dim, bias=False),
-            nn.LayerNorm(embed_dim)
+            nn.Linear(self.num_features, embed_dim, bias=False), nn.LayerNorm(embed_dim)
         )
 
         self.max_length = max_length
@@ -69,9 +66,14 @@ class TextEncoder(nn.Module):
 
         if texts is None:
             if {"input_ids", "attention_mask"}.issubset(kwargs.keys()):
-                texts = {"input_ids": kwargs["input_ids"], "attention_mask": kwargs["attention_mask"]}
+                texts = {
+                    "input_ids": kwargs["input_ids"],
+                    "attention_mask": kwargs["attention_mask"],
+                }
             else:
-                raise ValueError("Provide either `texts` or `input_ids`+`attention_mask`.")
+                raise ValueError(
+                    "Provide either `texts` or `input_ids`+`attention_mask`."
+                )
 
         inputs = self.tokenize(texts)
 
@@ -79,7 +81,7 @@ class TextEncoder(nn.Module):
         inputs = {k: v.to(device) for k, v in inputs.items()}
         outputs = self.model(**inputs)
         token_embeddings = outputs.last_hidden_state  # [B, L, H]
-        attention_mask = inputs['attention_mask'].unsqueeze(-1)  # [B, L, 1]
+        attention_mask = inputs["attention_mask"].unsqueeze(-1)  # [B, L, 1]
         masked_embeddings = token_embeddings * attention_mask
         sum_embeddings = masked_embeddings.sum(dim=1)
         lengths = attention_mask.sum(dim=1).clamp(min=1)
@@ -122,7 +124,7 @@ class TextEncoder(nn.Module):
             padding="max_length",
             truncation=True,
             max_length=self.max_length,
-            return_tensors = "pt",
+            return_tensors="pt",
         )
 
     @torch.no_grad()
@@ -158,7 +160,14 @@ class TextEncoder(nn.Module):
             depth=6,
             device=device,
             verbose=0,
-            col_names=("kernel_size", "input_size", "output_size", "num_params", "mult_adds", "trainable"),
+            col_names=(
+                "kernel_size",
+                "input_size",
+                "output_size",
+                "num_params",
+                "mult_adds",
+                "trainable",
+            ),
             row_settings=("var_names",),
         )
 

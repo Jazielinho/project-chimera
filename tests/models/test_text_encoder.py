@@ -1,7 +1,8 @@
-import torch
 import pytest
-import transformers
+import torch
+
 from chimera.models.text_encoder import TextEncoder
+
 
 @pytest.fixture(scope="module")
 def encoder():
@@ -122,7 +123,11 @@ def test_text_encoder_large_texts(encoder):
 
 
 def test_text_encoder_different_lengths(encoder):
-    texts = ["short", "a bit longer text", "this is a much longer text that exceeds the max length"]
+    texts = [
+        "short",
+        "a bit longer text",
+        "this is a much longer text that exceeds the max length",
+    ]
     z = encoder(texts)
     assert z.shape == (3, 256)  # Should handle different lengths
     norms = torch.norm(z, p=2, dim=-1)

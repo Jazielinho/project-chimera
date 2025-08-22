@@ -786,7 +786,8 @@ def _collate_fn(batch: List[Dict]) -> Dict[str, torch.Tensor]:
     """
     images = torch.stack([item["image"] for item in batch], dim=0).contiguous()
     captions = [item["caption"] for item in batch]
-    return {"image": images, "caption": captions}
+    image_ids = [str(item.get("image_id", "")) for item in batch]
+    return {"image": images, "caption": captions, "image_id": image_ids}
 
 
 def _suggest_num_workers(batch_size: int) -> int:

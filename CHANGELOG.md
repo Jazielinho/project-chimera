@@ -1,5 +1,12 @@
 # Changelog
-# Changelog
+
+## [0.1.2] - 2025-08-15
+
+### Added
+- Implemented contrastive loss function
+- created benchmark script for measuring contrastive loss performance
+- Added unit tests for contrastive loss function
+- Added Makefile target for running contrastive loss benchmarks
 
 ## [0.1.1] - 2025-08-14
 

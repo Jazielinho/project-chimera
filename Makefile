@@ -77,3 +77,15 @@ day4-full: day4-bench-text-encoder
 	@echo "Day 4 complete! Text encoder benchmarked and tested."
 
 bench-text-encoder: day4-bench-text-encoder
+
+# Day 5: Contrastive loss
+.PHONY: day4-bench-text-encoder day4-full
+
+day5-bench-contrastive-loss:
+	@echo "Benchmarking contrastive loss..."
+	python scripts/bench_contrastive_loss.py --batch-size 64 --log-mlflow
+	@echo "Benchmark report generated at reports/bench_contrastive_loss.md"
+	@echo "Results logged to MLflow for reproducibility"
+
+day5-full: day5-bench-contrastive-loss
+	@echo "Day 5 complete! Contrastive loss benchmarked and tested."

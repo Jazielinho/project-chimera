@@ -1,139 +1,135 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-Implementación corregida de pérdida contrastiva (InfoNCE) para entrenamiento.
-
-Este módulo contiene la implementación corregida de la pérdida InfoNCE simétrica
-con mejor estabilidad numérica y debugging mejorado.
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class ContrastiveLoss(nn.Module):
-    """
-    Implementación corregida de la pérdida InfoNCE simétrica.
-    """
-
-    def __init__(self, temperature=0.07, max_logit_scale=4.6, learnable_temp=True):
-        """
-        Inicializa la pérdida contrastiva corregida.
-
-        Args:
-            temperature (float): Temperatura inicial para escalar los logits
-            max_logit_scale (float): Valor máximo para clamp del logit_scale
-            learnable_temp (bool): Si la temperatura debe ser aprendible
-        """
+    def __init__(
+        self,
+        temperature: float = 0.07,
+        logit_scale_min: float = 0.0,
+        logit_scale_max: float = 4.6051702,  # ln(100)
+        label_smoothing: float = 0.0,
+        learnable_temperature: bool = True,
+        assert_normalized: bool = False,
+    ):
         super().__init__()
-        self.max_logit_scale = max_logit_scale
+        self.logit_scale_min = logit_scale_min
+        self.logit_scale_max = logit_scale_max
+        self.label_smoothing = label_smoothing
+        self.assert_normalized = assert_normalized
 
-        if learnable_temp:
-            # Parámetro aprendible para la temperatura (logit_scale)
-            # Inicializar con un valor más conservador
+        if learnable_temperature:
             init_scale = torch.log(torch.tensor(1.0 / temperature))
             self.logit_scale = nn.Parameter(init_scale)
         else:
-            # Temperatura fija
             self.register_buffer(
                 "logit_scale", torch.log(torch.tensor(1.0 / temperature))
             )
 
+        if not (0.0 <= self.label_smoothing < 1.0):
+            raise ValueError("label_smoothing debe estar en [0, 1).")
+        if temperature <= 0:
+            raise ValueError("temperature debe ser > 0.")
+
     def forward(self, image_features, text_features):
-        """
-        Calcula la pérdida InfoNCE simétrica con estabilidad mejorada.
-
-        Args:
-            image_features (torch.Tensor): Embeddings de imágenes de forma [B, D]
-            text_features (torch.Tensor): Embeddings de textos de forma [B, D]
-
-        Returns:
-            dict: Diccionario con la pérdida y métricas adicionales
-        """
-        # Verificar que no hay NaNs en la entrada
         if torch.isnan(image_features).any() or torch.isnan(text_features).any():
-            print("WARNING: NaNs detected in input features!")
+            print(
+                "WARNING: NaNs detected in input features! Replacing non-finite values with zeros."
+            )
 
-        # Normalizar características explícitamente
+        if image_features.shape[0] != text_features.shape[0]:
+            raise ValueError(
+                f"Batch size mismatch: {image_features.shape[0]} vs {text_features.shape[0]}"
+            )
+
+        batch_size = image_features.shape[0]
+        device = image_features.device
+        if batch_size < 2:
+            raise ValueError(
+                "InfoNCE requiere al menos 2 ejemplos en el batch para funcionar correctamente."
+            )
+
+        if self.assert_normalized:
+            # --- FIX: crear tensores de comparación en el mismo device ---
+            img_norms = image_features.norm(dim=-1)
+            txt_norms = text_features.norm(dim=-1)
+            ones_img = torch.ones_like(img_norms, device=device)
+            ones_txt = torch.ones_like(txt_norms, device=device)
+            assert torch.allclose(
+                img_norms, ones_img, atol=1e-3
+            ), "image_features no están normalizados"
+            assert torch.allclose(
+                txt_norms, ones_txt, atol=1e-3
+            ), "text_features no están normalizados"
+
+        # --- NEW: sanea valores no finitos antes de normalizar ---
+        if not torch.isfinite(image_features).all():
+            image_features = torch.where(
+                torch.isfinite(image_features),
+                image_features,
+                torch.zeros_like(image_features),
+            )
+        if not torch.isfinite(text_features).all():
+            text_features = torch.where(
+                torch.isfinite(text_features),
+                text_features,
+                torch.zeros_like(text_features),
+            )
+
+        # Normalización defensiva (por si acaso)
         image_features = F.normalize(image_features, dim=1, eps=1e-8)
         text_features = F.normalize(text_features, dim=1, eps=1e-8)
 
-        # Obtener tamaño del batch
-        batch_size = image_features.shape[0]
-        device = image_features.device
-
         # Clamp logit_scale para estabilidad numérica (más conservador)
-        logit_scale = torch.clamp(
-            self.logit_scale.exp(), min=0.0, max=self.max_logit_scale
+        logit_scale = self.logit_scale.clamp(self.logit_scale_min, self.logit_scale_max)
+        logit_scale_exp = logit_scale.exp()
+
+        # Similitud coseno (matriz [B, B])
+        similarity_matrix = image_features @ text_features.t()
+        logits = logit_scale_exp * similarity_matrix  # Escalado por temperatura
+
+        labels = torch.arange(batch_size, device=device)
+
+        # Cross-entropy simétrica
+        loss_img2txt = F.cross_entropy(
+            logits, labels, label_smoothing=self.label_smoothing
         )
+        loss_txt2img = F.cross_entropy(
+            logits.t(), labels, label_smoothing=self.label_smoothing
+        )
+        loss = 0.5 * (loss_img2txt + loss_txt2img)
 
-        # Calcular matriz de similitud coseno
-        similarity_matrix = torch.matmul(image_features, text_features.t())  # [B, B]
-
-        # Verificar que la similaridad está en el rango esperado [-1, 1]
-        if torch.isnan(similarity_matrix).any():
-            print("WARNING: NaNs in similarity matrix!")
-
-        # Aplicar escala de temperatura
-        logits = logit_scale * similarity_matrix
-
-        # Verificar logits
-        if torch.isnan(logits).any() or torch.isinf(logits).any():
-            print("WARNING: NaNs or Infs in logits!")
-            print(f"logit_scale: {logit_scale.item()}")
-            print(
-                f"similarity_matrix range: [{similarity_matrix.min().item():.4f}, {similarity_matrix.max().item():.4f}]"
+        # Guardrails: NaN/inf
+        if not torch.isfinite(loss):
+            max_logit = logits.abs().max().item()
+            raise RuntimeError(
+                f"Loss NaN/inf detectada. max|logits|={max_logit}, logit_scale_exp={logit_scale_exp.item()}"
             )
 
-        # Etiquetas: diagonal de la matriz (índices coincidentes)
-        labels = torch.arange(batch_size, device=device, dtype=torch.long)
-
-        # Calcular pérdida en ambas direcciones
-        loss_i2t = F.cross_entropy(
-            logits, labels, label_smoothing=0.1
-        )  # imagen a texto con smoothing
-        loss_t2i = F.cross_entropy(
-            logits.t(), labels, label_smoothing=0.1
-        )  # texto a imagen con smoothing
-
-        # Pérdida simétrica (promedio)
-        loss = (loss_i2t + loss_t2i) / 2.0
-
-        # Verificar pérdida
-        if torch.isnan(loss) or torch.isinf(loss):
-            print("WARNING: NaN or Inf in loss!")
-            print(f"loss_i2t: {loss_i2t.item()}")
-            print(f"loss_t2i: {loss_t2i.item()}")
-
-        # Calcular métricas adicionales para debugging
         with torch.no_grad():
-            # Similitud promedio
+            # avg_similarity = media global (incluye off-diagonal)
             avg_similarity = similarity_matrix.mean().item()
-            # Similitud en la diagonal (positivos verdaderos)
-            positive_similarity = similarity_matrix.diag().mean().item()
-            # Similitud fuera de la diagonal (negativos)
+            positive_similarity = similarity_matrix.diagonal().mean().item()
             mask = ~torch.eye(batch_size, dtype=torch.bool, device=device)
             negative_similarity = similarity_matrix[mask].mean().item()
-            # Temperatura efectiva
-            effective_temp = 1.0 / logit_scale.item()
-
-            # Accuracies para monitoreo
-            pred_i2t = torch.argmax(logits, dim=1)
-            pred_t2i = torch.argmax(logits.t(), dim=1)
-            acc_i2t = (pred_i2t == labels).float().mean().item()
-            acc_t2i = (pred_t2i == labels).float().mean().item()
+            effective_temp = 1.0 / logit_scale_exp.item()
+            pred_image2text = logits.argmax(dim=1)
+            pred_text2image = logits.t().argmax(dim=1)
+            accuracy_img2txt = (pred_image2text == labels).float().mean().item()
+            accuracy_txt2img = (pred_text2image == labels).float().mean().item()
+            accuracy = 0.5 * (accuracy_img2txt + accuracy_txt2img)
 
         return {
             "loss": loss,
-            "loss_i2t": loss_i2t,
-            "loss_t2i": loss_t2i,
+            "loss_img2txt": loss_img2txt,
+            "loss_txt2img": loss_txt2img,
+            "logit_scale_exp": logit_scale_exp.detach().item(),
             "avg_similarity": avg_similarity,
             "positive_similarity": positive_similarity,
             "negative_similarity": negative_similarity,
-            "logit_scale": logit_scale.item(),
-            "temperature": effective_temp,
-            "acc_i2t": acc_i2t,
-            "acc_t2i": acc_t2i,
+            "effective_temperature": effective_temp,
+            "accuracy": accuracy,
+            "accuracy_img2txt": accuracy_img2txt,
+            "accuracy_txt2img": accuracy_txt2img,
         }

@@ -1,6 +1,9 @@
 import hashlib
+import os
 import platform
+import socket
 import subprocess
+from datetime import datetime
 
 import mlflow
 import pynvml
@@ -30,6 +33,52 @@ def get_git_commit_hash():
         )
     except subprocess.CalledProcessError:
         return "N/A"
+
+
+def get_git_info():
+    """Get git repository information."""
+    try:
+        git_branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
+        ).strip()
+        git_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True
+        ).strip()
+        git_status = subprocess.check_output(
+            ["git", "status", "--porcelain"], text=True
+        ).strip()
+        return {
+            "git_branch": git_branch,
+            "git_commit": git_commit,
+            "git_dirty": bool(git_status),
+        }
+    except Exception as e:
+        return {"git_error": str(e)}
+
+
+def get_python_packages():
+    """Get key installed Python packages and their versions."""
+    try:
+        import pkg_resources
+
+        packages = {
+            pkg.key: pkg.version
+            for pkg in pkg_resources.working_set
+            if pkg.key
+            in [
+                "torch",
+                "torchvision",
+                "numpy",
+                "transformers",
+                "pandas",
+                "mlflow",
+                "pillow",
+                "timm",
+            ]
+        }
+        return packages
+    except Exception as e:
+        return {"package_error": str(e)}
 
 
 def get_conda_lock_hash(lockfile_path: str = "conda-lock.yml"):
@@ -73,8 +122,14 @@ def log_reproducibility_passport():
     characteristics such as GPU details, operating system, Python and library versions, and versioning details
     of the code and environment.
 
+    The function logs:
+    - Hardware information: GPU details (via NVML), CPU architecture, and OS
+    - Software information: Python, PyTorch, CUDA, cuDNN, Transformers, and TIMM versions
+    - Code information: Git commit hash and environment configuration checksum
+
     :raises pynvml.NVMLError: If any error occurs during interaction with NVIDIA Management Library (NVML).
     """
+    # --- Hardware Information ---
     try:
         pynvml.nvmlInit()
         handle = pynvml.nvmlDeviceGetHandleByIndex(0)
@@ -92,19 +147,47 @@ def log_reproducibility_passport():
         except pynvml.NVMLError:
             pass
 
-        mlflow.set_tag("hardware.cpu.arch", platform.processor())
-        mlflow.set_tag("hardware.os", f"{platform.system()} {platform.release()}")
+    # Additional hardware information
+    mlflow.set_tag("hardware.hostname", socket.gethostname())
+    mlflow.set_tag("hardware.cpu.arch", platform.processor())
+    mlflow.set_tag("hardware.cpu.count", os.cpu_count())
+    mlflow.set_tag("hardware.os", f"{platform.system()} {platform.release()}")
+    mlflow.set_tag("hardware.timestamp", datetime.now().isoformat())
 
-        # --- Pasaporte de Software ---
-        mlflow.set_tag("software.python.version", platform.python_version())
-        mlflow.set_tag("software.torch.version", torch.__version__)
-        mlflow.set_tag("software.cuda.version", torch.version.cuda)
-        mlflow.set_tag("software.cudnn.version", torch.backends.cudnn.version())
-        mlflow.set_tag("software.transformers.version", transformers.__version__)
-        mlflow.set_tag("software.timm.version", timm.__version__)
+    # --- Software Information ---
+    mlflow.set_tag("software.python.version", platform.python_version())
+    mlflow.set_tag("software.torch.version", torch.__version__)
+    mlflow.set_tag("software.cuda.version", torch.version.cuda)
+    mlflow.set_tag("software.cudnn.version", torch.backends.cudnn.version())
+    mlflow.set_tag("software.transformers.version", transformers.__version__)
+    mlflow.set_tag("software.timm.version", timm.__version__)
 
-        # --- Pasaporte de Código y Entorno ---
-        mlflow.set_tag("code.git_commit_sha", get_git_commit_hash())
-        mlflow.set_tag("code.conda_lock_hash", get_conda_lock_hash())
+    # --- CUDA Detailed Information (if available) ---
+    if torch.cuda.is_available():
+        mlflow.set_tag("cuda.arch_list", torch.cuda.get_arch_list())
+        mlflow.set_tag("cuda.device_count", torch.cuda.device_count())
+        for i in range(torch.cuda.device_count()):
+            device_name = torch.cuda.get_device_name(i)
+            mlflow.set_tag(f"cuda.device{i}.name", device_name)
+            props = torch.cuda.get_device_properties(i)
+            mlflow.set_tag(f"cuda.device{i}.capability", f"{props.major}.{props.minor}")
+            mlflow.set_tag(
+                f"cuda.device{i}.total_memory_gb",
+                round(props.total_memory / (1024**3), 2),
+            )
 
-        print("Passport logged successfully.")
+    # --- Python Key Packages ---
+    packages = get_python_packages()
+    for key, value in packages.items():
+        mlflow.set_tag(f"package.{key}", value)
+
+    # --- Code and Environment Information ---
+    # Git information
+    git_info = get_git_info()
+    for key, value in git_info.items():
+        mlflow.set_tag(f"git.{key}", value)
+
+    mlflow.set_tag("code.git_commit_sha", get_git_commit_hash())
+    mlflow.set_tag("code.conda_lock_hash", get_conda_lock_hash())
+
+    print("Reproducibility passport logged successfully.")

@@ -89,3 +89,25 @@ day5-bench-contrastive-loss:
 
 day5-full: day5-bench-contrastive-loss
 	@echo "Day 5 complete! Contrastive loss benchmarked and tested."
+
+
+# Day 6: Training targets
+.PHONY: day6-train day6-monitor day6-full
+
+day6-train:
+	@echo "Starting training for one epoch..."
+	python scripts/run_training.py
+
+day6-monitor:
+	@echo "Running GPU monitoring..."
+	nvidia-smi dmon -s pucm -d 2 -o TD -f logs/dmon_train.log
+
+day6-analyze-metrics:
+	@echo "Analyzing training metrics..."
+	@echo "GPU Utilization from dmon_train.log:" \
+	&& grep -v "#" logs/dmon_train.log | awk '{ sum_sm += $$6; count++ } END { print "Average SM%: " sum_sm/count "%" }'
+	@echo "Check MLflow UI for complete metrics visualization"
+
+day6-full: day6-train
+	@echo "Day 6 complete! Check MLflow UI and logs for results"
+	@echo "Run 'make day6-analyze-metrics' to analyze GPU utilization"

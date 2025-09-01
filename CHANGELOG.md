@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.3] - 2025-09-01
+
+### Added
+- Implemented full training pipeline in `chimera.train.train`
+- Added metrics logging for wall-clock time, VRAM usage, gradient norm, and logit_scale
+- Integrated checkpoint saving functionality for model recovery
+- Created utility script for running training with optimal parameters
+- Added GPU memory management and optimization
+
+### Changed
+- Evolved train_sanity.py into a production-ready training script
+- Improved LR scheduling with warmup and cosine decay
+- Enhanced contrastive loss implementation with stability improvements
+- Updated documentation for training requirements and parameters
+
 ## [0.1.2] - 2025-08-15
 
 ### Added
